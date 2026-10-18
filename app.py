@@ -43,7 +43,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ డిడక్షన్ ట్రాన్సాクション ఫంక్షన్
+# వాలెట్ డిడクション ట్రాన్సాクション ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -51,7 +51,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     try:
         db_cursor.execute("BEGIN IMMEDIATE;")
         user_row = db_cursor.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-        user_paisa = user_row if user_row else 0
+        user_paisa = user_row[0] if user_row else 0
         
         if user_paisa >= cost_paisa:
             new_balance = user_paisa - cost_paisa
@@ -195,10 +195,10 @@ current_user = "test_user"
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-user_paisa = user_row if user_row else 0
+user_paisa = user_row[0] if user_row else 0
 conn.close()
 
-# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ కాలమ్స్ (ప్యూర్ పైథాన్ విజెట్స్)
+# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ కాలమ్స్
 st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
 m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
 
@@ -237,3 +237,4 @@ with m_col3:
         except Exception:
             db_conn.rollback()
             st.error("Error")
+        finally:
