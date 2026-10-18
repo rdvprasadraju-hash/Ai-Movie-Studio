@@ -96,8 +96,7 @@ with m_col1:
     st.markdown(f"<span style='font-size:12px; color:#555;'>👤 {current_user}</span><br>💳 **₹{user_paisa/100:.2f}**", unsafe_allow_html=True)
     
 with m_col2:
-    # 🎯 ఇక్కడ రీఛార్జ్ ఆప్షన్స్ లిస్ట్ పర్ఫెక్ట్‌గా ఇచ్చాను బాస్!
-    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 200, 500], label_visibility="collapsed")
+    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500], label_visibility="collapsed")
     
 with m_col3:
     if st.button("➕ Topup", use_container_width=True):
@@ -173,18 +172,23 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
             }
             
             try:
+                # గమనిక: సరైన ఫాల్ మోడల్ URL ఇక్కడ ఇవ్వబడింది
                 video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
                 if video_res.status_code == 200 or video_res.status_code == 202:
                     req_id = video_res.json().get("request_id")
-                    status_url = f"https://fal.run{req_id}"
+                    status_url = f"https://fal.run/requests/{req_id}"
                     
                     raw_video_url = ""
                     for _ in range(15):
                         time.sleep(4)
                         check_res = requests.get(status_url, headers={"Authorization": f"Key {FAL_API_KEY}"})
-                        if check_res.status_code == 200 and check_res.json().get("status") == "COMPLETED":
-                            raw_video_url = check_res.json().get("video", {}).get("url")
-                            break
+                        if check_res.status_code == 200:
+                            res_json = check_res.json()
+                            if res_json.get("status") == "COMPLETED":
+                                raw_video_url = res_json.get("video", {}).get("url")
+                                break
+                            elif res_json.get("status") == "FAILED":
+                                break
                     
                     if raw_video_url:
                         db_conn = sqlite3.connect('ai_movie_studio.db')
@@ -208,7 +212,3 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                         with video_placeholder:
                             st.success("🎉 వీడియో విజయవంతంగా రెడీ అయ్యింది!")
                             st.video(raw_video_url)
-                            st.download_button(label="📥 Download Video", data=requests.get(raw_video_url).content, file_name="movie.mp4", mime="video/mp4", use_container_width=True)
-                    else:
-                        st.error("AI సర్వర్ రెస్పాన్స్ ఇవ్వలేదు.")
-                else:
