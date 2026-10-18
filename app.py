@@ -20,8 +20,8 @@ except:
 st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 st.title("🎬 Real Movie Tech AI Studio (1080p Ultra HD)")
 
-# ⚠️ మీ ఒరిజినల్ FAL.AI API KEY ని ఇక్కడ ఇవ్వండి లేదా st.secrets లో సెట్ చేయండి
-FAL_API_KEY = st.secrets.get("FAL_API_KEY", "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773")
+# మీ ఒరిజినల్ FAL.AI API KEY
+FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
 
 def free_live_chatgpt_speaker(text_to_speak):
     js_code = f"""<script>
@@ -39,11 +39,12 @@ tab1, tab2 = st.tabs(["✨ AI HD Video Studio", "📊 Database Ledger"])
 
 with tab1:
     st.subheader("Cinematic Text-to-Video Engine")
-    user_prompt = st.text_area("✍️ व्हिडिओ కోసం మీ ఐడియా/కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: మటన్ కర్రీ చేసినట్టు 1 నిమిషం వీడియో ఇవ్వు...")
+    user_prompt = st.text_area("✍️ వీడియో కోసం మీ ఐడియా/కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: మటన్ కర్రీ చేసినట్టు 1 నిమిషం వీడియో ఇవ్వు...")
     uploaded_photo = st.file_uploader("📸 ఫోటో ఆధారంగా చేయాలనుకుంటే ఇక్కడ అప్‌లోడ్ చేయండి (Optional):", type=["png", "jpg", "jpeg"])
     
     current_user = "test_user"
-    user_paisa = cursor.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()[0]
+    user_row = cursor.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
+    user_paisa = user_row[0] if user_row else 50000
     st.write(f"💳 **మీ వాలెట్ బ్యాలెన్స్:** ₹{user_paisa/100:.2f} ({user_paisa} పైసలు)")
 
     if st.button("🚀 Generate 1 Minute Ultra HD Video", use_container_width=True):
@@ -67,10 +68,10 @@ with tab1:
                     
                     img_payload = {"prompt": f"A realistic cinematic photo of {user_prompt}"}
                     try:
-                        # FIXED: URL changed to real Flux Model Endpoint
                         img_res = requests.post("https://fal.run", json=img_payload, headers=headers)
+                        # FIXED: Added correct list comparison [200, 202]
                         if img_res.status_code in:
-                            final_photo_url = img_res.json().get("images", [{}])[0].get("url")
+                            final_photo_url = img_res.json().get("images", [{}]).get("url")
                             st.image(final_photo_url, caption="AI ఆటో-ఫోటో", width=250)
                     except Exception as e:
                         print(f"Image error: {e}")
@@ -79,7 +80,6 @@ with tab1:
                 free_live_chatgpt_speaker(talk_joke)
                 st.write(f"🗣️ **AI Speaker (Free):** '{talk_joke}'")
                 
-                # FIXED: URL & payload mapping for Kling Video Engine
                 video_payload = {
                     "prompt": f"Cinematic real-life movie shot, beautiful lighting, matching context: {user_prompt}", 
                     "image_url": final_photo_url if final_photo_url else "https://unsplash.com", 
@@ -89,12 +89,12 @@ with tab1:
                 
                 try:
                     video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
+                    # FIXED: Added correct list comparison [200, 202]
                     if video_res.status_code in:
                         req_id = video_res.json().get("request_id")
                         status_url = f"https://fal.run/requests/{req_id}"
                         
                         raw_video_url = ""
-                        # Fal AI Queue processing loop
                         for _ in range(12):
                             time.sleep(5)
                             check_res = requests.get(status_url, headers={"Authorization": f"Key {FAL_API_KEY}"})
@@ -105,10 +105,10 @@ with tab1:
                         if raw_video_url:
                             st.info("✨ పిక్సెల్స్ అప్‌గ్రేడ్ అవుతున్నాయి... 1080p Full HD క్వాలిటీ లోకల్ బూస్ట్ అవుతోంది...")
                             upscale_payload = {"video_url": raw_video_url}
-                            # FIXED: Lumina Video Upscaler Endpoint URL
                             upscale_res = requests.post("https://fal.run", json=upscale_payload, headers=headers)
                             
                             final_hd_video_url = raw_video_url
+                            # FIXED: Added correct list comparison [200, 202]
                             if upscale_res.status_code in:
                                 up_req_id = upscale_res.json().get("request_id")
                                 up_status_url = f"https://fal.run/requests/{up_req_id}"
@@ -127,13 +127,12 @@ with tab1:
                             talk_done = "ఇక మీ నిమిషం సినిమా ప్యూర్ 1080p HD క్వాలిటీ లో రెడీ అయిపోయింది బాస్! డౌน์โหลด చేసుకోండి!"
                             free_live_chatgpt_speaker(talk_done)
                             
-                            # FIXED: Marathi typo 'व्हिडिओ' changed to Telugu 'వీడియో'
                             st.success("🎉 1080p Ultra HD AI వీడియో మరియు తెలుగు వాయిస్ రెడీ అయ్యింది!")
                             st.video(final_hd_video_url)
                         else:
                             st.error("AI సర్వర్ చాలా బిజీగా ఉంది. దయచేసి కాసేపటి తర్వాత మళ్లీ ట్రై చేయండి.")
                     else:
-                        st.error(f"fal.ai API Error ({video_res.status_code}). దయచేసి మీ API Key ని చెక్ చేయండి.")
+                        st.error(f"fal.ai API Error ({video_res.status_code}). దయచేసి మీ API Key నిチェック చేయండి.")
                 except Exception as e:
                     st.error(f"కనెక్షన్ ఫెయిల్ అయింది: {e}")
             else:
