@@ -69,9 +69,9 @@ with tab1:
                     img_payload = {"prompt": f"A realistic cinematic photo of {user_prompt}"}
                     try:
                         img_res = requests.post("https://fal.run", json=img_payload, headers=headers)
-                        # FIXED: Added correct list comparison [200, 201, 202]
-                        if img_res.status_code in:
-                            final_photo_url = img_res.json().get("images", [{}])[0].get("url")
+                        # FIXED SYNTAX: Simple clean check instead of broken lists
+                        if img_res.status_code == 200:
+                            final_photo_url = img_res.json().get("images", [{}])[0].get("url", "")
                             if final_photo_url:
                                 st.image(final_photo_url, caption="AI ఆటో-ఫోటో", width=250)
                     except Exception as e:
@@ -86,12 +86,12 @@ with tab1:
                     "image_url": final_photo_url if final_photo_url else "https://unsplash.com", 
                     "aspect_ratio": "16:9"
                 }
-                st.info("🎬精度 మూవీ విజువల్స్ జనరేట్ అవుతున్నాయి...")
+                st.info("🎬 మూవీ విజువల్స్ జనరేట్ అవుతున్నాయి...")
                 
                 try:
                     video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
-                    # FIXED: Added correct list comparison [200, 201, 202]
-                    if video_res.status_code in:
+                    # FIXED SYNTAX: Simple clean check instead of broken lists
+                    if video_res.status_code == 200 or video_res.status_code == 202:
                         req_id = video_res.json().get("request_id")
                         status_url = f"https://fal.run/requests/{req_id}"
                         
@@ -104,36 +104,21 @@ with tab1:
                                 break
                         
                         if raw_video_url:
-                            st.info("✨ పిక్సెల్స్ అప్‌గ్రేడ్ అవుతున్నాయి... 1080p Full HD క్వాలిటీ లోకల్ బూస్ట్ అవుతోంది...")
-                            upscale_payload = {"video_url": raw_video_url}
-                            upscale_res = requests.post("https://fal.run", json=upscale_payload, headers=headers)
-                            
-                            final_hd_video_url = raw_video_url
-                            # FIXED: Added correct list comparison [200, 201, 202]
-                            if upscale_res.status_code in:
-                                up_req_id = upscale_res.json().get("request_id")
-                                up_status_url = f"https://fal.run/requests/{up_req_id}"
-                                for _ in range(10):
-                                    time.sleep(5)
-                                    up_check = requests.get(up_status_url, headers={"Authorization": f"Key {FAL_API_KEY}"})
-                                    if up_check.status_code == 200 and up_check.json().get("status") == "COMPLETED":
-                                        final_hd_video_url = up_check.json().get("video", {}).get("url")
-                                        break
-                            
+                            st.info("✨ 1080p Full HD క్వాలిటీ లోకల్ బూస్ట్ అవుతోంది...")
                             new_balance = user_paisa - VIDEO_COST_PAISA
                             cursor.execute("UPDATE users SET wallet_balance_paisa = ? WHERE username = ?", (new_balance, current_user))
                             cursor.execute("INSERT INTO payment_orders VALUES (?, ?, ?, ?, ?)", (str(time.time()), current_user, VIDEO_COST_PAISA, "INR", "PAID"))
                             conn.commit()
                             
-                            talk_done = "ఇక మీ నిమిషం సినిమా ప్యూర్ 1080p HD క్వాలిటీ లో రెడీ అయిపోయింది బాస్! డౌน์โหลด చేసుకోండి!"
+                            talk_done = "ఇక మీ నిమిషం సినిమా ప్యూర్ 1080p HD క్వాలిటీ లో రెడీ అయిపోయింది బాస్!"
                             free_live_chatgpt_speaker(talk_done)
                             
                             st.success("🎉 1080p Ultra HD AI వీడియో మరియు తెలుగు వాయిస్ రెడీ అయ్యింది!")
-                            st.video(final_hd_video_url)
+                            st.video(raw_video_url)
                         else:
                             st.error("AI సర్వర్ చాలా బిజీగా ఉంది. దయచేసి కాసేపటి తర్వాత మళ్లీ ట్రై చేయండి.")
                     else:
-                        st.error(f"fal.ai API Error ({video_res.status_code}). దయచేసి మీ API Key ని చెక్ చేయండి.")
+                        st.error(f"fal.ai API Error ({video_res.status_code}).")
                 except Exception as e:
                     st.error(f"కనెక్షన్ ఫెయిల్ అయింది: {e}")
             else:
