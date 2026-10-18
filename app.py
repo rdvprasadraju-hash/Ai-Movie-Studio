@@ -130,7 +130,7 @@ video_duration = st.slider("⏱️ వీడియో నిడివి (సె
 
 st.write("📐 **వీడియో టైప్ / సైజ్ ఎంచుకోండి:**")
 video_type = st.selectbox(
-    "వీడియో ఫార్మాట్ెలెక్ట్ చేయండి:",
+    "వీడియో ఫార్మాట్ సెలెక్ట్ చేయండి:",
     ["📱 Instagram Reel / Shorts (9:16)", "📺 YouTube Full Video (16:9)", "🟩 Square Post / Video (1:1)"],
     label_visibility="collapsed"
 )
