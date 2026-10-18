@@ -19,7 +19,7 @@ def init_production_db():
         )
     ''')
     
-    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్
+    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్ (10 కాలమ్స్ పక్కాగా సింక్ అయ్యాయి)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_orders (
             order_id TEXT PRIMARY KEY, 
@@ -43,7 +43,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ డిడクション బ్యాంకింగ్ ట్రాన్సాクション ఫంక్షన్
+# వాలెట్ డిడక్షన్ బ్యాంకింగ్ ట్రాన్సాクション ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -149,6 +149,7 @@ st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 
 st.markdown("""
     <style>
+    /* 🔥 ఎడమ, కుడి వైపులా ఉండే అన్ని అనవసర చిహ్నాలను పూర్తిగా దాచడానికి రూల్ */
     header, [data-testid="stHeader"], .stAppDeployButton, #MainMenu, [data-testid="collapsedControl"] { 
         display: none !important; 
         visibility: hidden !important; 
@@ -156,6 +157,7 @@ st.markdown("""
     }
     footer { display: none !important; visibility: hidden !important; }
     
+    /* 📱 మొబైల్ టచ్ స్క్రోలింగ్ ఎనేబుల్ చేయడం */
     html, body, [data-testid="stAppViewContainer"], .main {
         overflow-y: auto !important;
         overflow-x: hidden !important;
@@ -170,6 +172,7 @@ st.markdown("""
         max-width: 100% !important;
     }
     
+    /* టాప్ వాలెట్ బార్ స్టైలింగ్ (1 ఇంచ్ లుక్) */
     .top-bar-box { 
         background-color: #ffffff; 
         padding: 10px; 
@@ -179,6 +182,7 @@ st.markdown("""
         margin-bottom: 20px; 
     }
     
+    /* ✍️ కథ రాసే బాక్స్ పెద్ద స్పేస్ స్టైలింగ్ */
     div[data-testid="stTextArea"] textarea { 
         min-height: 220px !important; 
         font-size: 16px !important; 
@@ -189,7 +193,7 @@ st.markdown("""
 FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
 current_user = "test_user"
 
-# 🎯 డేటాబేస్ కనెక్షన్‌ను ఇక్కడ సురక్షితంగా ఓపెన్ చేసి క్లోజ్ చేస్తున్నాము
+# 🎯 డేటాబేస్ టూపుల్ లాజిక్‌ని ఇక్కడ వంద శాతం సురక్షితంగా మార్చాము బాస్
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
 user_paisa = user_row[0] if user_row else 0
@@ -235,8 +239,3 @@ with m_col3:
             st.error("Error")
         finally:
             db_conn.close()
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- 3. ఐదు ప్రధాన కోర్ విజెట్స్ (వరుస క్రమంలో పక్కాగా లోడ్ అవుతాయి) ---
-
-# టూల్ 1: ప్రాంప్ట్ బాక్స్
