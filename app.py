@@ -4,7 +4,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
-# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ (Level 5 Schema Contract) ---
+# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ ---
 def init_production_db():
     conn = sqlite3.connect('ai_movie_studio.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -19,7 +19,7 @@ def init_production_db():
         )
     ''')
     
-    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్ (10 కాలమ్స్ పక్కాగా సింక్ అయ్యాయి)
+    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_orders (
             order_id TEXT PRIMARY KEY, 
@@ -43,7 +43,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ డిడక్షన్ బ్యాంకింగ్ ట్రాన్సాクション ఫంక్షన్
+# వాలెట్ డిడక్షన్ ట్రాన్సాక్షన్ ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -149,7 +149,7 @@ st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 
 st.markdown("""
     <style>
-    /* 🔥 ఎడమ, కుడి వైపులా ఉండే అన్ని చిహ్నాలను స్క్రీన్ నుండి శాశ్వతంగా డిలీట్ చేయడానికి రూల్ */
+    /* 🔥 ఎడమ, కుడి వైపులా ఉండే అన్ని అనవసర చిహ్నాలను పూర్తిగా దాచడానికి రూల్ */
     header, [data-testid="stHeader"], .stAppDeployButton, #MainMenu, [data-testid="collapsedControl"] { 
         display: none !important; 
         visibility: hidden !important; 
@@ -157,7 +157,7 @@ st.markdown("""
     }
     footer { display: none !important; visibility: hidden !important; }
     
-    /* 📱 మొబైల్ స్మూత్ టచ్ స్క్రోలింగ్ ఎనేబుల్ చేయడం */
+    /* 📱 మొబైల్ టచ్ స్క్రోలింగ్ ఎనేబుల్ చేయడం */
     html, body, [data-testid="stAppViewContainer"], .main {
         overflow-y: auto !important;
         overflow-x: hidden !important;
@@ -203,8 +203,10 @@ st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
 m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
 
 with m_col1:
-    st.write(f"👤 {current_user}")
-    st.write(f"💳 **₹{user_paisa/100:.2f}**")
+    # 🎯 🌟 ఎర్రర్లు ఇచ్చే పాత st.write/HTML తీసేసి.. నేరుగా ఆఫీషియల్ పద్ధతిలో రాశాను బాస్ (క్రాష్ అవ్వదు) 🌟
+    st.write(f"User: {current_user}")
+    wallet_value_in_inr = float(user_paisa / 100.0)
+    st.metric(label="Wallet Balance", value=f"INR {wallet_value_in_inr:.2f}")
     
 with m_col2:
     recharge_selection = st.selectbox("Topup:", options=["₹50", "₹100", "₹500"], label_visibility="collapsed")
@@ -232,6 +234,3 @@ with m_col3:
             db_conn.commit()
             st.success(f"+₹{recharge_amount}")
             time.sleep(1)
-            st.rerun()
-        except Exception:
-            db_conn.rollback()
