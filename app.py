@@ -43,7 +43,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ డిడక్షన్ ట్రాన్సాక్షన్ ఫంక్షన్
+# వాలెట్ డిడక్షన్ ట్రాన్సాクション ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -51,8 +51,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     try:
         db_cursor.execute("BEGIN IMMEDIATE;")
         user_row = db_cursor.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-        
-        user_paisa = user_row[0] if user_row else 0
+        user_paisa = user_row if user_row else 0
         
         if user_paisa >= cost_paisa:
             new_balance = user_paisa - cost_paisa
@@ -65,24 +64,22 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
                 """INSERT INTO payment_orders 
                 (order_id, username, amount_paisa, currency, provider, provider_order_id, provider_payment_id, status, created_at, paid_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (order_id, current_user, cost_paisa, "INR", provider_name, f"F_{req_id[:6]}" if req_id else "F_UNKNOWN", f"P_{int(time.time())}", "PAID", now_str, now_str)
+                (order_id, current_user, cost_paisa, "INR", provider_name, f"F_{req_id[:6]}", f"P_{int(time.time())}", "PAID", now_str, now_str)
             )
             db_conn.commit()
             return True
         else:
             db_conn.rollback()
             return False
-    except Exception as e:
+    except Exception:
         db_conn.rollback()
-        st.error(f"Database Error: {e}")
         return False
     finally:
         db_conn.close()
 
-# API రన్ చేయడానికి ప్రత్యేక ఫంక్షన్ (FIXED API Endpoints)
+# API రన్ చేయడానికి ప్రత్యేక ఫంక్షన్
 def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
     try:
-        # FIX: సరైన మోడల్ ఎండ్‌పాయింట్ ఇచ్చాను (ఉదాహరణకు fal-ai/kling-video)
         video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
         if video_res.status_code in (200, 202):
             req_id = video_res.json().get("request_id")
@@ -98,17 +95,14 @@ def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
                     elif res_json.get("status") == "FAILED":
                         break
         return None, None
-    except Exception as e:
-        st.error(f"Video API Error: {e}")
+    except Exception:
         return None, None
 
-# FLUX/Dev ఆటో-ఫోటో ఇంజన్ ఫంక్షన్ (FIXED Endpoint)
+# FLUX/Dev ఆటో-ఫోటో ఇంజన్ ఫంక్షన్
 def generate_flux_dev_photo(prompt, headers):
     try:
         boosted_img_prompt = f"A deeply detailed cinematic film still, professional hollywood movie set lighting, matching: {prompt}"
         img_payload = {"prompt": boosted_img_prompt}
-        
-        # FIX: కరెక్ట్ మోడల్ పాత్ సెట్ చేశాను
         img_res = requests.post("https://fal.run", json=img_payload, headers=headers)
         if img_res.status_code in (200, 202):
             req_id = img_res.json().get("request_id")
@@ -117,15 +111,12 @@ def generate_flux_dev_photo(prompt, headers):
                 time.sleep(2)
                 check_res = requests.get(status_url, headers=headers)
                 if check_res.status_code == 200 and check_res.json().get("status") == "COMPLETED":
-                    images = check_res.json().get("images", [])
-                    if images:
-                        return images[0].get("url", "")
+                    return check_res.json().get("images", [{}]).get("url", "")
         return ""
-    except Exception as e:
-        st.error(f"Image API Error: {e}")
+    except Exception:
         return ""
 
-# ElevenLabs ప్రీమియం వాయిస్ ఫంక్షన్ (FIXED Endpoint)
+# ElevenLabs ప్రీమియం వాయిస్ ఫంక్షన్
 def play_elevenlabs_voice(text_to_speak, headers):
     try:
         voice_payload = {
@@ -133,7 +124,6 @@ def play_elevenlabs_voice(text_to_speak, headers):
             "model_id": "eleven_multilingual_v2",
             "voice_settings": {"stability": 0.45, "similarity_boost": 0.75}
         }
-        # FIX: కరెక్ట్ మోడల్ పాత్ సెట్ చేశాను
         voice_res = requests.post("https://fal.run", json=voice_payload, headers=headers)
         if voice_res.status_code in (200, 202):
             req_id = voice_res.json().get("request_id")
@@ -154,11 +144,12 @@ def play_elevenlabs_voice(text_to_speak, headers):
 
 init_production_db()
 
-# --- 2. ప్రొఫెషనల్ యాప్ లేఅవుట్ & CSS ---
+# --- 2. ప్రొఫెషనల్ యాప్ లేఅవుట్ & CSS (సింబల్స్ శాశ్వతంగా తొలగింపు) ---
 st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 
 st.markdown("""
     <style>
+    /* 🔥 ఎడమ, కుడి వైపులా ఉండే అన్ని అనవసర చిహ్నాలను పూర్తిగా దాచడానికి రూల్ */
     header, [data-testid="stHeader"], .stAppDeployButton, #MainMenu, [data-testid="collapsedControl"] { 
         display: none !important; 
         visibility: hidden !important; 
@@ -166,6 +157,7 @@ st.markdown("""
     }
     footer { display: none !important; visibility: hidden !important; }
     
+    /* 📱 మొబైల్ టచ్ స్క్రోలింగ్ ఎనేబుల్ చేయడం */
     html, body, [data-testid="stAppViewContainer"], .main {
         overflow-y: auto !important;
         overflow-x: hidden !important;
@@ -180,6 +172,7 @@ st.markdown("""
         max-width: 100% !important;
     }
     
+    /* టాప్ వాలెట్ బార్ స్టైలింగ్ (1 ఇంచ్ లుక్) */
     .top-bar-box { 
         background-color: #ffffff; 
         padding: 10px; 
@@ -189,6 +182,7 @@ st.markdown("""
         margin-bottom: 20px; 
     }
     
+    /* ✍️ కథ రాసే బాక్స్ పెద్ద స్పేస్ స్టైలింగ్ */
     div[data-testid="stTextArea"] textarea { 
         min-height: 220px !important; 
         font-size: 16px !important; 
@@ -196,19 +190,50 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# భద్రత కోసం ఈ కీని Streamlit Secrets లో దాచడం మంచిది
-FAL_API_KEY = "fal_sk_fba..." 
+FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
 current_user = "test_user"
-
-headers = {
-    "Authorization": f"Key {FAL_API_KEY}",
-    "Content-Type": "application/center"
-}
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-user_paisa = user_row[0] if user_row else 0
+user_paisa = user_row if user_row else 0
 conn.close()
 
-# FIX: బ్రోకెన్ టాగ్స్ క్లియర్ చేసి కంప్లీట్ డిజైన్ యాడ్ చేసాను
-st.markdown(f'<div class="top-bar-box"><h3>🎥 AI Movie Studio HD</h3><p>Wallet Balance: ₹{user_paisa / 100:.2f}</p></div>', unsafe_allow_html=True)
+# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ కాలమ్స్ (ప్యూర్ పైథాన్ విజెట్స్)
+st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
+m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
+
+with m_col1:
+    st.write(f"User: {current_user}")
+    wallet_value_in_inr = float(user_paisa / 100.0)
+    st.metric(label="Wallet Balance", value=f"INR {wallet_value_in_inr:.2f}")
+    
+with m_col2:
+    recharge_selection = st.selectbox("Topup:", options=["₹50", "₹100", "₹500"], label_visibility="collapsed")
+    
+with m_col3:
+    if st.button("➕ Topup", use_container_width=True):
+        recharge_amount = int(recharge_selection.replace("₹", ""))
+        recharge_paisa = recharge_amount * 100
+        
+        db_conn = sqlite3.connect('ai_movie_studio.db')
+        db_cursor = db_conn.cursor()
+        try:
+            db_conn.execute("BEGIN IMMEDIATE;")
+            db_cursor.execute("UPDATE users SET wallet_balance_paisa = wallet_balance_paisa + ? WHERE username = ?", (recharge_paisa, current_user))
+            
+            topup_order_id = f"TOP_{int(time.time())}"
+            now_str = datetime.now(timezone.utc).isoformat()
+            
+            db_cursor.execute(
+                """INSERT INTO payment_orders 
+                (order_id, username, amount_paisa, currency, provider, provider_order_id, provider_payment_id, status, created_at, paid_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (topup_order_id, current_user, recharge_paisa, "INR", "LOCAL", f"T_{int(time.time())}", f"P_{int(time.time())}", "PAID", now_str, now_str)
+            )
+            db_conn.commit()
+            st.success(f"+₹{recharge_amount}")
+            time.sleep(1)
+            st.rerun()
+        except Exception:
+            db_conn.rollback()
+            st.error("Error")
