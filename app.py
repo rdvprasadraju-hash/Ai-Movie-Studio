@@ -4,7 +4,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
-# --- 1. ప్రొడక్షన్ డేటాబేస్ ఇంజిన్ సెటప్ (Level 5 Schema Contract) ---
+# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ ---
 def init_production_db():
     conn = sqlite3.connect('ai_movie_studio.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -32,7 +32,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# වాలెట్ మరియు ఆర్డర్ అప్‌డేట్ చేయడానికి ప్రత్యేక ఫంక్షన్
+# వాలెట్ ట్రాన్సాక్షన్ ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -64,7 +64,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     finally:
         db_conn.close()
 
-# 🎬 1080p Ultra HD LTX-Video API ఫంక్షన్ (Pay-as-you-GPU ఫ్రెండ్లీ)
+# API రన్ చేయడానికి ప్రత్యేక ఫంక్షన్
 def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
     try:
         video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
@@ -85,7 +85,7 @@ def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
     except Exception:
         return None, None
 
-# 📸 FLUX/Dev ఆటో-ఫోటో ఇంజన్ ఫంక్షన్
+# FLUX/Dev ఆటో-ఫోటో ఇంజన్ ఫంక్షన్
 def generate_flux_dev_photo(prompt, headers):
     try:
         boosted_img_prompt = f"A deeply detailed cinematic film still, 35mm photograph, professional hollywood movie set lighting, highly realistic human textures, matching: {prompt}"
@@ -103,7 +103,7 @@ def generate_flux_dev_photo(prompt, headers):
     except Exception:
         return ""
 
-# 🔊 ElevenLabs ప్రీమియం వాయిస్ ఫంక్షన్
+# ElevenLabs ప్రీమియం వాయిస్ ఫంక్షన్
 def play_elevenlabs_voice(text_to_speak, headers):
     try:
         voice_payload = {
@@ -131,7 +131,7 @@ def play_elevenlabs_voice(text_to_speak, headers):
 
 init_production_db()
 
-# --- 2. మొబైల్ ఆప్టిమైజ్డ్ పేజీ కాన్ఫిగరేషన్ & CSS (స్క్రోలింగ్ ఫిక్స్) ---
+# --- 2. మొబైల్ ఆప్టిమైజ్డ్ పేజీ కాన్ఫిగరేషన్ & CSS ---
 st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 
 st.markdown("""
@@ -141,7 +141,6 @@ st.markdown("""
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
     
-    /* 📱 మొబైల్ టచ్ స్క్రోలింగ్ ఎనేబుల్ చేయడం */
     html, body, [data-testid="stAppViewContainer"] {
         overflow-y: auto !important;
         scroll-behavior: smooth;
@@ -202,5 +201,10 @@ with m_col3:
             db_conn.close()
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 3. కోర్ వీడియో ఇంజన్ సెక్షన్ ---
-user_prompt = st.text_area("✍️穩ీడియో ఐడియా/కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: మటన్ కర్రీ చేసినట్టు వీడియో ఇవ్వు...")
+# --- 3. కోర్ వీడియో ఇంజన్ సెక్షన్ (ఇక్కడ టూల్స్ అన్నీ తిరిగి యాడ్ చేయబడ్డాయి) ---
+user_prompt = st.text_area("✍️ వీడియో ఐడియా/కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: మటన్ కర్రీ చేసినట్టు వీడియో ఇవ్వు...")
+
+# 📸 1. ఫోటో అప్‌లోడర్ టూల్
+uploaded_photo = st.file_uploader("📸 ఫోటో ఆధారంగా చేయాలనుకుంటే ఇక్కడ అప్‌లోడ్ చేయండి (Optional):", type=["png", "jpg", "jpeg"])
+
+# ⏱️ 2. వీడియో నిడివి స్లైడర్ టూల్
