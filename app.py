@@ -96,7 +96,7 @@ with m_col1:
     st.markdown(f"<span style='font-size:12px; color:#555;'>👤 {current_user}</span><br>💳 **₹{user_paisa/100:.2f}**", unsafe_allow_html=True)
     
 with m_col2:
-    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 200, 500], label_visibility="collapsed")
+    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500], label_visibility="collapsed")
     
 with m_col3:
     if st.button("➕ Topup", use_container_width=True):
@@ -190,6 +190,7 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                                 break
                     
                     if raw_video_url:
+                        # డేటాబేస్ అప్‌డేట్ లాజిక్
                         db_conn = sqlite3.connect('ai_movie_studio.db')
                         db_cursor = db_conn.cursor()
                         try:
@@ -208,6 +209,7 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                         
                         free_live_chatgpt_speaker(f"ఇక మీ {video_duration} సెకన్ల సినిమా ప్యూర్ 1080p HD క్వాలిటీ లో రెడీ అయిపోయింది బాస్!")
                         
+                        # ఇండెంట్టేషన్ సరిచేసి సేఫ్ గా లోడ్ చేస్తున్నాము
                         with video_placeholder:
                             st.success("🎉 వీడియో విజయవంతంగా రెడీ అయ్యింది!")
                             st.video(raw_video_url)
