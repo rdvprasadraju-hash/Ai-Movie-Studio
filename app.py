@@ -38,7 +38,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     try:
         db_cursor.execute("BEGIN IMMEDIATE;")
         user_row = db_cursor.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-        user_paisa = user_row[0] if user_row else 0
+        user_paisa = user_row if user_row else 0
         if user_paisa >= cost_paisa:
             new_balance = user_paisa - cost_paisa
             db_cursor.execute("UPDATE users SET wallet_balance_paisa = ? WHERE username = ?", (new_balance, current_user))
@@ -120,7 +120,7 @@ def play_elevenlabs_voice(text_to_speak, headers):
 
 init_production_db()
 
-# --- 2. నార్మల్ లేఅవుట్ & స్టాండర్డ్ CSS (నో లాకింగ్ ఎఫెక్ట్స్) ---
+# --- 2. లేఅవుట్ కాన్ఫిగరేషన్ ---
 st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 
 FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
@@ -135,12 +135,13 @@ user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username =
 user_paisa = user_row[0] if user_row else 0
 conn.close()
 
-# వాలెట్ మేనేజ్‌మెంట్ సెక్షన్
+# వాలెట్ డ్యాష్‌బోర్డ్
 col_w1, col_w2 = st.columns([2, 1])
 with col_w1:
     st.write(f"👤 **యూజర్:** {current_user} | 💳 **బ్యాలెన్స్:** ₹{user_paisa/100:.2f}")
 with col_w2:
-    recharge_amount = st.selectbox("Topup:", [50, 100, 500])
+    # 🎯 🌟 ఇక్కడ ఆప్షన్స్ లిస్ట్ పర్ఫెక్ట్‌గా ఇచ్చాను బాస్ [50, 100, 500] 🌟
+    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500])
     if st.button("➕ Topup Wallet"):
         recharge_paisa = recharge_amount * 100
         db_conn = sqlite3.connect('ai_movie_studio.db')
@@ -172,7 +173,7 @@ user_prompt = st.text_area("✍️ వీడియో ఐడియా లేద�
 # టూల్ 2: ఫోటో అప్‌లోడర్
 uploaded_photo = st.file_uploader("📸 ఫోటో ఆధారంగా చేయాలనుకుంటే ఇక్కడ అప్‌లోడ్ చేయండి (Optional):", type=["png", "jpg", "jpeg"])
 
-# ట్వూల్ 3: నిడివి స్లైడర్ (10 సెకన్ల నుండి 20 నిమిషాల వరకు)
+# టూల్ 3: నిడివి స్లైడర్ (10 సెకన్ల నుండి 20 నిమిషాల వరకు)
 video_duration = st.slider("⏱️ వీడియో నిడివి సెలెక్ట్ చేయండి (సెకన్లలో):", min_value=10, max_value=1200, value=10, step=5)
 if video_duration < 60:
     duration_text = f"{video_duration} సెకన్లు"
@@ -210,5 +211,3 @@ if st.button(f"🚀 Generate {duration_text} Ultra HD Video", use_container_widt
             else:
                 final_photo_url = "https://unsplash.com"
 
-            boosted_video_prompt = f"High-end cinema tech footage, 1080p ultra realism, beautiful dramatic dynamic camera motion, grading style matching: {user_prompt}"
-            video_payload = {
