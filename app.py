@@ -4,7 +4,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
-# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ (కచ్చితమైన కాలమ్స్ మాత్రమే) ---
+# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ ---
 def init_production_db():
     conn = sqlite3.connect('ai_movie_studio.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -19,7 +19,7 @@ def init_production_db():
         )
     ''')
     
-    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్ (కచ్చితంగా 10 కాలమ్స్ మాత్రమే)
+    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_orders (
             order_id TEXT PRIMARY KEY, 
@@ -43,7 +43,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ డిడక్షన్ బ్యాంకింగ్ ట్రాన్సాクション ఫంక్షన్
+# వాలెట్ డిడクション బ్యాంకింగ్ ట్రాన్సాクション ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -60,7 +60,6 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
             order_id = f"ORD_{int(time.time())}"
             now_str = datetime.now(timezone.utc).isoformat()
             
-            # 🌟 10 కాలమ్స్ కి 10 వాల్యూస్ పక్కాగా మ్యాచ్ చేసాము (OperationalError రాదు)
             db_cursor.execute(
                 """INSERT INTO payment_orders 
                 (order_id, username, amount_paisa, currency, provider, provider_order_id, provider_payment_id, status, created_at, paid_at) 
@@ -190,19 +189,19 @@ st.markdown("""
 FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
 current_user = "test_user"
 
+# 🎯 డేటాబేస్ కనెక్షన్‌ను ఇక్కడ సురక్షితంగా ఓపెన్ చేసి క్లోజ్ చేస్తున్నాము
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-# 🎯 🌟 fetchone() టూపుల్ ఇండెక్స్ లోపాన్ని ఇక్కడ పక్కాగా ఫిక్స్ చేశాను 🌟
 user_paisa = user_row[0] if user_row else 0
 conn.close()
 
-# 🎯 టాప్ 1 ఇంచ్ బార్ లో వాలెట్ కాలమ్స్ (ఎర్రర్లు లేని సురక్షిత సిస్టమ్)
+# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ కాలమ్స్
 st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
 m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
 
 with m_col1:
-    st.write(f"👤 {current_user}")
-    st.write(f"💳 **₹{user_paisa/100:.2f}**")
+    st.write(f"User: {current_user}")
+    st.write(f"Balance: ₹{user_paisa/100:.2f}")
     
 with m_col2:
     recharge_selection = st.selectbox("Topup:", options=["₹50", "₹100", "₹500"], label_visibility="collapsed")
@@ -238,5 +237,6 @@ with m_col3:
             db_conn.close()
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 3. ఐదు ప్రధాన కోర్ విజెట్స్ (వరుస క్రమంలో పక్కాగా) ---
+# --- 3. ఐదు ప్రధాన కోర్ విజెట్స్ (వరుస క్రమంలో పక్కాగా లోడ్ అవుతాయి) ---
 
+# టూల్ 1: ప్రాంప్ట్ బాక్స్
