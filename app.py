@@ -4,7 +4,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
-# --- 1. ప్రొడక్షన్ డేటాబేస్ ఇంజిన్ సెటప్ ---
+# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ ---
 def init_production_db():
     conn = sqlite3.connect('ai_movie_studio.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -40,7 +40,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     try:
         db_cursor.execute("BEGIN IMMEDIATE;")
         user_row = db_cursor.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-        user_paisa = user_row[0] if user_row else 0
+        user_paisa = user_row if user_row else 0
         
         if user_paisa >= cost_paisa:
             new_balance = user_paisa - cost_paisa
@@ -64,7 +64,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     finally:
         db_conn.close()
 
-# 🎬 1080p Ultra HD LTX-Video API ఫంక్షన్ (Pay-as-you-GPU ఫ్రెండ్లీ)
+# API రన్ చేయడానికి ప్రత్యేక ఫంక్షన్
 def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
     try:
         video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
@@ -72,7 +72,6 @@ def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
             req_id = video_res.json().get("request_id")
             status_url = f"https://fal.run/requests/{req_id}"
             
-            # పొడవాటి వీడియోల కోసం వెయిటింగ్ టైమ్ లూప్ పెంచడం జరిగింది
             for _ in range(60):
                 time.sleep(5)
                 check_res = requests.get(status_url, headers={"Authorization": f"Key {FAL_API_KEY}"})
@@ -86,7 +85,7 @@ def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
     except Exception:
         return None, None
 
-# 📸 FLUX/Dev ఆటో-ఫోటో ఇంజన్ ఫంక్షన్
+# FLUX/Dev ఆటో-ఫోటో ఇంజన్ ఫంక్షన్
 def generate_flux_dev_photo(prompt, headers):
     try:
         boosted_img_prompt = f"A deeply detailed cinematic film still, 35mm photograph, professional hollywood movie set lighting, highly realistic human textures, matching: {prompt}"
@@ -104,7 +103,7 @@ def generate_flux_dev_photo(prompt, headers):
     except Exception:
         return ""
 
-# 🔊 ElevenLabs ప్రీమియం వాయిస్ ఫంక్షన్
+# ElevenLabs ప్రీమియం వాయిస్ ఫంక్షన్
 def play_elevenlabs_voice(text_to_speak, headers):
     try:
         voice_payload = {
@@ -166,7 +165,7 @@ current_user = "test_user"
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-user_paisa = user_row[0] if user_row else 0
+user_paisa = user_row if user_row else 0
 conn.close()
 
 # మినీ మెనూ విత్ సబ్-కాలమ్స్
@@ -177,7 +176,7 @@ with m_col1:
     st.markdown(f"<span style='font-size:11px; color:#555;'>👤 {current_user}</span><br><span style='font-size:14px; font-weight:bold; color:#2E7D32;'>₹{user_paisa/100:.2f}</span>", unsafe_allow_html=True)
     
 with m_col2:
-    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500], label_visibility="collapsed")
+    recharge_amount = st.selectbox("Topup Amt:",, label_visibility="collapsed")
     
 with m_col3:
     if st.button("➕ Topup", use_container_width=True):
@@ -202,5 +201,9 @@ with m_col3:
             db_conn.close()
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 3. కోర్ వీడియో ఇంజన్ సెక్షన్ ---
-user_prompt = st.text_area("✍️ వీడియో ఐడియా/కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: మటన్ కర్రీ చేసినట్టు వీడియో ఇవ్వు...")
+# --- 3. కోర్ వీడియో ఇంజన్ సెక్షన్ (అక్షర దోషాలు లేకుండా పక్కాగా అలైన్ చేయబడింది) ---
+user_prompt = st.text_area("✍️ వీడియో ఐడియా లేదా కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: మటన్ కర్రీ చేసినట్టు వీడియో ఇవ్వు...")
+
+# 📸 1. ఫోటో అప్‌లోడర్ విజెట్
+uploaded_photo = st.file_uploader("📸 ఫోటో ఆధారంగా చేయాలనుకుంటే ఇక్కడ అప్‌లోడ్ చేయండి (Optional):", type=["png", "jpg", "jpeg"])
+
