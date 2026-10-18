@@ -27,7 +27,7 @@ def init_production_db():
     ''')
     try:
         cursor.execute("INSERT OR IGNORE INTO users (username, wallet_balance_paisa) VALUES (?, ?)", ("test_user", 50000))
-    except:
+    except Exception:
         pass
     conn.commit()
     conn.close()
@@ -85,7 +85,7 @@ current_user = "test_user"
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-user_paisa = user_row[0] if user_row else 0
+user_paisa = user_row if user_row else 0
 conn.close()
 
 # మినీ మెనూ విత్ సబ్-కాలమ్స్
@@ -96,7 +96,7 @@ with m_col1:
     st.markdown(f"<span style='font-size:12px; color:#555;'>👤 {current_user}</span><br>💳 **₹{user_paisa/100:.2f}**", unsafe_allow_html=True)
     
 with m_col2:
-    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500], label_visibility="collapsed")
+    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 200, 500], label_visibility="collapsed")
     
 with m_col3:
     if st.button("➕ Topup", use_container_width=True):
@@ -130,7 +130,7 @@ video_duration = st.slider("⏱️ వీడియో నిడివి (సె
 
 st.write("📐 **వీడియో టైప్ / సైజ్ ఎంచుకోండి:**")
 video_type = st.selectbox(
-    "వీడియో ఫార్మాట్ సెలెక్ట్ చేయండి:",
+    "వీడియో ఫార్మాట్ెలెక్ట్ చేయండి:",
     ["📱 Instagram Reel / Shorts (9:16)", "📺 YouTube Full Video (16:9)", "🟩 Square Post / Video (1:1)"],
     label_visibility="collapsed"
 )
@@ -161,7 +161,7 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                     img_res = requests.post("https://fal.run", json={"prompt": f"Realistic cinematic shot of {user_prompt}"}, headers=headers)
                     if img_res.status_code == 200:
                         final_photo_url = img_res.json().get("images", [{}]).get("url", "")
-                except:
+                except Exception:
                     pass
 
             video_payload = {
@@ -172,7 +172,6 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
             }
             
             try:
-                # గమనిక: సరైన ఫాల్ మోడల్ URL ఇక్కడ ఇవ్వబడింది
                 video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
                 if video_res.status_code == 200 or video_res.status_code == 202:
                     req_id = video_res.json().get("request_id")
@@ -202,7 +201,7 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                             db_cursor.execute("INSERT INTO payment_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
                                               (order_id, current_user, VIDEO_COST_PAISA, "INR", "FAL_AI", f"F_{req_id[:6]}", f"P_{int(time.time())}", "PAID", now_str, now_str))
                             db_conn.commit()
-                        except:
+                        except Exception:
                             db_conn.rollback()
                         finally:
                             db_conn.close()
