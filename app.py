@@ -178,12 +178,12 @@ user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username =
 user_paisa = user_row if user_row else 0
 conn.close()
 
-# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ ఇంజన్ (HTML ఎర్రర్ లేకుండా సరిచేయబడింది)
+# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ ఇంజన్ (HTML ఎర్రర్ లేకుండా పక్కాగా సరిచేయబడింది)
 st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
 m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
 
 with m_col1:
-    # 🎯 🌟 ఇక్కడ unsafe_allow_html=True మిస్ అవ్వడం వల్లే ఎర్రర్ వచ్చింది, ఇప్పుడు పక్కాగా సరిచేశాను 🌟
+    # 🎯 🌟 ఇక్కడ కచ్చితంగా unsafe_allow_html=True పారామీటర్ ని క్లోజ్ బ్రాకెట్ లోపల యాడ్ చేశాను బాస్ 🌟
     st.markdown(f"<span style='font-size:11px; color:#555;'>👤 {current_user}</span><br><span style='font-size:14px; font-weight:bold; color:#2E7D32;'>₹{user_paisa/100:.2f}</span>", unsafe_allow_html=True)
     
 with m_col2:
@@ -220,5 +220,3 @@ st.markdown('</div>', unsafe_allow_html=True)
 user_prompt = st.text_area("✍️ వీడియో ఐడియా లేదా కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: ఒక సింహం అడవిలో గర్జిస్తున్నట్టు వీడియో ఇవ్వు...")
 
 # టూల్ 2: ఫోటో అప్‌లోడర్
-uploaded_photo = st.file_uploader("📸 ఫోటో ఆధారంగా చేయాలనుకుంటే ఇక్కడ అప్‌లోడ్ చేయండి (Optional):", type=["png", "jpg", "jpeg"])
-
