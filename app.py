@@ -43,7 +43,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ డిడクション ట్రాన్సాクション ఫంక్షన్
+# వాలెట్ డిడక్షన్ ట్రాన్సాクション ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -195,7 +195,7 @@ current_user = "test_user"
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-# 🎯 🌟 టూపుల్ బాగ్ ని ఇక్కడ ఇండెక్సింగ్ [0] ద్వారా వంద శాతం పర్ఫెక్ట్ గా క్లియర్ చేసాను బాస్ 🌟
+# 🎯 🌟 టూపుల్ విలువను ఇండెక్సింగ్ ద్వారా ఇక్కడే పక్కాగా బ్యాలెన్స్ చేసాను 🌟
 user_paisa = user_row[0] if user_row else 0
 conn.close()
 
