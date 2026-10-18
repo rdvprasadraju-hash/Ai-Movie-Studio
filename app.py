@@ -4,7 +4,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
-# --- 1. ప్రొడక్షన్ డేటాబేస్ ఇంజిన్ సెటప్ ---
+# --- 1. ప్రొడక్షన్ డేటాబేస్ ఇంజిన్ సెటప్ (Level 5 Schema Contract) ---
 def init_production_db():
     conn = sqlite3.connect('ai_movie_studio.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -32,8 +32,8 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# വാലെറ്റ് మరియు ఆర్డర్ అప్‌డేట్ చేయడానికి ప్రత్యేక ఫంక్షన్
-def execute_wallet_transaction(current_user, cost_paisa, req_id):
+# වాలెట్ మరియు ఆర్డర్ అప్‌డేట్ చేయడానికి ప్రత్యేక ఫంక్షన్
+def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
     db_conn.execute("PRAGMA foreign_keys = ON;")
@@ -51,7 +51,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id):
                 """INSERT INTO payment_orders 
                 (order_id, username, amount_paisa, currency, provider, provider_order_id, provider_payment_id, status, created_at, paid_at) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (order_id, current_user, cost_paisa, "INR", "FAL_AI", f"F_{req_id[:6]}", f"P_{int(time.time())}", "PAID", now_str, now_str)
+                (order_id, current_user, cost_paisa, "INR", provider_name, f"F_{req_id[:6]}", f"P_{int(time.time())}", "PAID", now_str, now_str)
             )
             db_conn.commit()
             return True
@@ -64,7 +64,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id):
     finally:
         db_conn.close()
 
-# API రన్ చేయడానికి ప్రత్యేక ఫంక్షన్
+# 🎬 1080p Ultra HD LTX-Video API ఫంక్షన్ (Pay-as-you-GPU ఫ్రెండ్లీ)
 def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
     try:
         video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
@@ -72,7 +72,7 @@ def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
             req_id = video_res.json().get("request_id")
             status_url = f"https://fal.run/requests/{req_id}"
             
-            for _ in range(15):
+            for _ in range(25):
                 time.sleep(4)
                 check_res = requests.get(status_url, headers={"Authorization": f"Key {FAL_API_KEY}"})
                 if check_res.status_code == 200:
@@ -85,51 +85,79 @@ def call_fal_ai_video_api(video_payload, headers, FAL_API_KEY):
     except Exception:
         return None, None
 
+# 📸 FLUX/Dev ఆటో-ఫోటో ఇంజన్ ఫంక్షన్
+def generate_flux_dev_photo(prompt, headers):
+    try:
+        boosted_img_prompt = f"A deeply detailed cinematic film still, 35mm photograph, professional hollywood movie set lighting, highly realistic human textures, matching: {prompt}"
+        img_payload = {"prompt": boosted_img_prompt}
+        img_res = requests.post("https://fal.run", json=img_payload, headers=headers)
+        if img_res.status_code in (200, 202):
+            req_id = img_res.json().get("request_id")
+            status_url = f"https://fal.run/requests/{req_id}"
+            for _ in range(12):
+                time.sleep(2)
+                check_res = requests.get(status_url, headers=headers)
+                if check_res.status_code == 200 and check_res.json().get("status") == "COMPLETED":
+                    return check_res.json().get("images", [{}]).get("url", "")
+        return ""
+    except Exception:
+        return ""
+
+# 🔊 ElevenLabs ప్రీమియం వాయిస్ ఫంక్షన్
+def play_elevenlabs_voice(text_to_speak, headers):
+    try:
+        voice_payload = {
+            "text": text_to_speak,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {"stability": 0.45, "similarity_boost": 0.75}
+        }
+        voice_res = requests.post("https://fal.run", json=voice_payload, headers=headers)
+        if voice_res.status_code in (200, 202):
+            req_id = voice_res.json().get("request_id")
+            status_url = f"https://fal.run/requests/{req_id}"
+            for _ in range(10):
+                time.sleep(2)
+                check_res = requests.get(status_url, headers=headers)
+                if check_res.status_code == 200 and check_res.json().get("status") == "COMPLETED":
+                    audio_url = check_res.json().get("audio", {}).get("url", "")
+                    if audio_url:
+                        st.audio(audio_url, format="audio/mp3", autoplay=True)
+                        return
+    except Exception:
+        pass
+    
+    js_code = f'<script>if("speechSynthesis" in window){{var speech=new SpeechSynthesisUtterance("{text_to_speak}");speech.lang="te-IN";window.speechSynthesis.speak(speech);}}</script>'
+    st.components.v1.html(js_code, height=0)
+
 init_production_db()
 
-# --- 2. మొబైల్ ఆప్టిమైజ్డ్ పేజీ కాన్ఫిగరేషన్ & CSS ---
+# --- 2. మొబైల్ ఆప్టిమైజ్డ్ పేజీ కాన్ఫిగరేషన్ & CSS (స్క్రోలింగ్ ఫిక్స్) ---
 st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 
 st.markdown("""
     <style>
-    header {visibility: hidden !important;}
-    [data-testid="stHeader"] {background-color: transparent; visibility: hidden !important;}
+    [data-testid="stHeader"] { opacity: 0 !important; pointer-events: none !important; height: 0px !important; }
     .stAppDeployButton {display: none !important;}
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
     
-    .block-container { 
-        padding-top: 0.2rem !important; 
-        padding-bottom: 1rem !important;
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
-        max-width: 100% !important;
+    /* 📱 మొబైల్ టచ్ స్క్రోలింగ్ ఎనేబుల్ చేయడం */
+    html, body, [data-testid="stAppViewContainer"] {
+        overflow-y: auto !important;
+        scroll-behavior: smooth;
     }
-    
+    .block-container { 
+        padding-top: 0.5rem !important; padding-bottom: 2rem !important;
+        padding-left: 0.6rem !important; padding-right: 0.6rem !important; max-width: 100% !important;
+    }
     div[data-testid="stTextArea"] textarea { min-height: 110px !important; font-size: 14px !important; }
     .main-title { font-size: 22px !important; font-weight: 700; text-align: center; margin-bottom: 1px; color: #1E1E1E; }
     .sub-title { font-size: 12px !important; text-align: center; color: #666; margin-bottom: 10px; }
-    
-    .mini-menu-box {
-        background-color: #f7f9fa;
-        padding: 6px 10px;
-        border-radius: 8px;
-        border: 1px solid #eef2f4;
-        margin-bottom: 12px;
-    }
+    .mini-menu-box { background-color: #f7f9fa; padding: 8px 10px; border-radius: 8px; border: 1px solid #eef2f4; margin-bottom: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
 FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
-
-def free_live_chatgpt_speaker(text_to_speak):
-    js_code = f"""<script>
-    if ('speechSynthesis' in window) {{
-        var speech = new SpeechSynthesisUtterance("{text_to_speak}");
-        speech.lang = 'te-IN'; window.speechSynthesis.speak(speech);
-    }}
-    </script>"""
-    st.components.v1.html(js_code, height=0)
 
 st.markdown('<div class="main-title">🎬 Real Movie Tech AI Studio</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">1080p Ultra HD Cinematic Video Generator</div>', unsafe_allow_html=True)
@@ -143,10 +171,10 @@ conn.close()
 
 # మినీ మెనూ విత్ సబ్-కాలమ్స్
 st.markdown('<div class="mini-menu-box">', unsafe_allow_html=True)
-m_col1, m_col2, m_col3 = st.columns([1.1, 1.4, 1.1])
+m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.2])
 
 with m_col1:
-    st.markdown(f"<span style='font-size:12px; color:#555;'>👤 {current_user}</span><br>💳 **₹{user_paisa/100:.2f}**", unsafe_allow_html=True)
+    st.markdown(f"<span style='font-size:11px; color:#555;'>👤 {current_user}</span><br><span style='font-size:14px; font-weight:bold; color:#2E7D32;'>₹{user_paisa/100:.2f}</span>", unsafe_allow_html=True)
     
 with m_col2:
     recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500], label_visibility="collapsed")
@@ -164,7 +192,6 @@ with m_col3:
             db_cursor.execute("INSERT INTO payment_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
                               (topup_order_id, current_user, recharge_paisa, "INR", "LOCAL", f"T_{int(time.time())}", f"P_{int(time.time())}", "PAID", now_str, now_str))
             db_conn.commit()
-            free_live_chatgpt_speaker(f"సక్సెస్ బాస్! {recharge_amount} రూపాయలు యాడ్ అయ్యాయి.")
             st.success(f"+₹{recharge_amount}")
             time.sleep(1)
             st.rerun()
@@ -176,49 +203,4 @@ with m_col3:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 3. కోర్ వీడియో ఇంజన్ సెక్షన్ ---
-user_prompt = st.text_area("✍️ వీడియో ఐడియా/కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: మటన్ కర్రీ చేసినట్టు వీడియో ఇవ్వు...")
-uploaded_photo = st.file_uploader("📸 ఫోటో ఆధారంగా (Optional):", type=["png", "jpg", "jpeg"])
-
-video_duration = st.slider("⏱️ వీడియో నిడివి (సెకన్లు):", min_value=10, max_value=60, value=10, step=5)
-
-st.write("📐 **వీడియో టైప్ / సైజ్ ఎంచుకోండి:**")
-video_type = st.selectbox(
-    "వీడియో ఫార్మాట్ సెలెక్ట్ చేయండి:",
-    ["📱 Instagram Reel / Shorts (9:16)", "📺 YouTube Full Video (16:9)", "🟩 Square Post / Video (1:1)"],
-    label_visibility="collapsed"
-)
-
-selected_ratio = "9:16" if "9:16" in video_type else ("1:1" if "1:1" in video_type else "16:9")
-VIDEO_COST_PAISA = int((video_duration / 10) * 1000)
-
-st.caption(f"💰 ఈ వీడియో ఖర్చు: ₹{VIDEO_COST_PAISA/100:.2f} ({VIDEO_COST_PAISA} పైసలు)")
-video_placeholder = st.container()
-
-if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_width=True):
-    if user_prompt:
-        if user_paisa >= VIDEO_COST_PAISA:
-            st.info("🔄 AI వీడియో జనరేట్ అవుతోంది...")
-            free_live_chatgpt_speaker(f"అద్భుతం బాస్! మీ సినిమా స్టోరీకి తగ్గట్టు పక్కా {video_duration} సెకన్ల విజువల్స్ డిజైన్ చేస్తున్నాను.")
-            
-            headers = {"Authorization": f"Key {FAL_API_KEY}", "Content-Type": "application/json"}
-            final_photo_url = ""
-            
-            if uploaded_photo is None:
-                try:
-                    img_res = requests.post("https://fal.run", json={"prompt": f"Realistic cinematic shot of {user_prompt}"}, headers=headers)
-                    if img_res.status_code == 200:
-                        final_photo_url = img_res.json().get("images", [{}]).get("url", "")
-                except Exception:
-                    pass
-
-            video_payload = {
-                "prompt": f"Cinematic real movie shot: {user_prompt}", 
-                "image_url": final_photo_url if final_photo_url else "https://unsplash.com", 
-                "aspect_ratio": selected_ratio,
-                "duration": video_duration
-            }
-            
-            raw_video_url, req_id = call_fal_ai_video_api(video_payload, headers, FAL_API_KEY)
-            
-            if raw_video_url:
-                tx_status = execute_wallet_transaction(current_user, VIDEO_COST_PAISA, req_id)
+user_prompt = st.text_area("✍️穩ీడియో ఐడియా/కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: మటన్ కర్రీ చేసినట్టు వీడియో ఇవ్వు...")
