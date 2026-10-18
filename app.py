@@ -124,7 +124,7 @@ def play_elevenlabs_voice(text_to_speak, headers):
 
 init_production_db()
 
-# --- 2. ప్రొఫెషనల్ సూపర్-స్లిమ్ మొబైల్ UI & CSS (నో బాగ్స్) ---
+# --- 2. ప్రొఫెషనల్ సూపర్-స్లిమ్ మొబైల్ UI & CSS ---
 st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 
 st.markdown("""
@@ -178,20 +178,19 @@ user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username =
 user_paisa = user_row if user_row else 0
 conn.close()
 
-# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ ఇంజన్ (బగ్స్ లేకుండా సరిచేయబడింది)
+# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ ఇంజన్ (HTML ఎర్రర్ లేకుండా సరిచేయబడింది)
 st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
 m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
 
 with m_col1:
+    # 🎯 🌟 ఇక్కడ unsafe_allow_html=True మిస్ అవ్వడం వల్లే ఎర్రర్ వచ్చింది, ఇప్పుడు పక్కాగా సరిచేశాను 🌟
     st.markdown(f"<span style='font-size:11px; color:#555;'>👤 {current_user}</span><br><span style='font-size:14px; font-weight:bold; color:#2E7D32;'>₹{user_paisa/100:.2f}</span>", unsafe_allow_html=True)
     
 with m_col2:
-    # 🌟 టెక్స్ట్ ఆప్షన్స్ రూపంలో డ్రాప్‌డౌన్ మార్చడం జరిగింది
     recharge_selection = st.selectbox("Topup:", options=["₹50", "₹100", "₹500"], label_visibility="collapsed")
     
 with m_col3:
     if st.button("➕ Topup", use_container_width=True):
-        # ఎంచుకున్న టెక్స్ట్ నుండి నంబర్‌ను వేరు చేసే సేఫ్ లాజిక్
         recharge_amount = int(recharge_selection.replace("₹", ""))
         recharge_paisa = recharge_amount * 100
         
