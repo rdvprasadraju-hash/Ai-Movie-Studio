@@ -190,7 +190,7 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                                 break
                     
                     if raw_video_url:
-                        # డేటాబేస్ అప్‌డేట్ లాజిక్
+                        # 🎯 డేటాబేస్ అప్‌డేట్ లాజిక్ ఇక్కడ క్లీన్‌గా క్లోజ్ అయింది బాస్
                         db_conn = sqlite3.connect('ai_movie_studio.db')
                         db_cursor = db_conn.cursor()
                         try:
@@ -209,7 +209,6 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                         
                         free_live_chatgpt_speaker(f"ఇక మీ {video_duration} సెకన్ల సినిమా ప్యూర్ 1080p HD క్వాలిటీ లో రెడీ అయిపోయింది బాస్!")
                         
-                        # ఇండెంట్టేషన్ సరిచేసి సేఫ్ గా లోడ్ చేస్తున్నాము
+                        # 🎯 డేటాబేస్ try-except పూర్తిగా ముగిసిన తర్వాతే ఈ వీడియో ప్లేయర్ సెక్షన్ వస్తుంది
                         with video_placeholder:
                             st.success("🎉 వీడియో విజయవంతంగా రెడీ అయ్యింది!")
-                            st.video(raw_video_url)
