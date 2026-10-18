@@ -19,7 +19,7 @@ def init_production_db():
         )
     ''')
     
-    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్
+    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్ (10 కాలమ్స్ పక్కాగా ఉన్నాయి)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_orders (
             order_id TEXT PRIMARY KEY, 
@@ -43,7 +43,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ డిడక్షన్ ట్రాన్సాクション ఫంక్షన్
+# వాలెట్ డిడクション ట్రాన్సాクション ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -172,7 +172,7 @@ st.markdown("""
         max-width: 100% !important;
     }
     
-    /* టాప్ వాలెట్ బార్ స్టైలింగ్ (1 ఇంచ్ లుక్) */
+    /* టాప్ వాలెట్ బార్ స్టైలింగ్ */
     .top-bar-box { 
         background-color: #ffffff; 
         padding: 10px; 
@@ -180,12 +180,6 @@ st.markdown("""
         border: 1px solid #eef2f4; 
         box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
         margin-bottom: 20px; 
-    }
-    
-    /* ✍️ కథ రాసే బాక్స్ పెద్ద స్పేస్ స్టైలింగ్ */
-    div[data-testid="stTextArea"] textarea { 
-        min-height: 220px !important; 
-        font-size: 16px !important; 
     }
     </style>
     """, unsafe_allow_html=True)
@@ -195,11 +189,11 @@ current_user = "test_user"
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-# 🎯 🌟 టూపుల్ విలువను ఇండెక్సింగ్ ద్వారా ఇక్కడే పక్కాగా బ్యాలెన్స్ చేసాను 🌟
+# 🎯 🌟 టూపుల్ ఇండెక్సింగ్ లోపాన్ని ఇక్కడ క్లీన్ గా సరిచేశాను బాస్ 🌟
 user_paisa = user_row[0] if user_row else 0
 conn.close()
 
-# 🎯 1 ఇంచ్ టాప్ బార్ లో వాలెట్ మరియు రీఛార్జ్ కాలమ్స్
+# 🎯 టాప్ 1 ఇంచ్ వాలెట్ బార్
 st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
 m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
 
@@ -238,3 +232,9 @@ with m_col3:
             db_conn.rollback()
             st.error("Error")
         finally:
+            db_conn.close()
+st.markdown('</div>', unsafe_allow_html=True)
+
+# --- 3. ఐదు ప్రధాన కోర్ విజెట్స్ (వరుస క్రమంలో పక్కాగా) ---
+
+# టూల్ 1: ప్రాంప్ట్ బాక్స్
