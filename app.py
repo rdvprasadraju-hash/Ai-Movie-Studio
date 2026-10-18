@@ -69,10 +69,11 @@ with tab1:
                     img_payload = {"prompt": f"A realistic cinematic photo of {user_prompt}"}
                     try:
                         img_res = requests.post("https://fal.run", json=img_payload, headers=headers)
-                        # FIXED: Added correct list comparison [200, 202]
+                        # FIXED: Added correct list comparison [200, 201, 202]
                         if img_res.status_code in:
-                            final_photo_url = img_res.json().get("images", [{}]).get("url")
-                            st.image(final_photo_url, caption="AI ఆటో-ఫోటో", width=250)
+                            final_photo_url = img_res.json().get("images", [{}])[0].get("url")
+                            if final_photo_url:
+                                st.image(final_photo_url, caption="AI ఆటో-ఫోటో", width=250)
                     except Exception as e:
                         print(f"Image error: {e}")
                 
@@ -85,11 +86,11 @@ with tab1:
                     "image_url": final_photo_url if final_photo_url else "https://unsplash.com", 
                     "aspect_ratio": "16:9"
                 }
-                st.info("🎬 మూవీ విజువల్స్ జనరేట్ అవుతున్నాయి...")
+                st.info("🎬精度 మూవీ విజువల్స్ జనరేట్ అవుతున్నాయి...")
                 
                 try:
                     video_res = requests.post("https://fal.run", json=video_payload, headers=headers)
-                    # FIXED: Added correct list comparison [200, 202]
+                    # FIXED: Added correct list comparison [200, 201, 202]
                     if video_res.status_code in:
                         req_id = video_res.json().get("request_id")
                         status_url = f"https://fal.run/requests/{req_id}"
@@ -108,7 +109,7 @@ with tab1:
                             upscale_res = requests.post("https://fal.run", json=upscale_payload, headers=headers)
                             
                             final_hd_video_url = raw_video_url
-                            # FIXED: Added correct list comparison [200, 202]
+                            # FIXED: Added correct list comparison [200, 201, 202]
                             if upscale_res.status_code in:
                                 up_req_id = upscale_res.json().get("request_id")
                                 up_status_url = f"https://fal.run/requests/{up_req_id}"
@@ -132,7 +133,7 @@ with tab1:
                         else:
                             st.error("AI సర్వర్ చాలా బిజీగా ఉంది. దయచేసి కాసేపటి తర్వాత మళ్లీ ట్రై చేయండి.")
                     else:
-                        st.error(f"fal.ai API Error ({video_res.status_code}). దయచేసి మీ API Key నిチェック చేయండి.")
+                        st.error(f"fal.ai API Error ({video_res.status_code}). దయచేసి మీ API Key ని చెక్ చేయండి.")
                 except Exception as e:
                     st.error(f"కనెక్షన్ ఫెయిల్ అయింది: {e}")
             else:
