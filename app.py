@@ -38,7 +38,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     try:
         db_cursor.execute("BEGIN IMMEDIATE;")
         user_row = db_cursor.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-        user_paisa = user_row if user_row else 0
+        user_paisa = user_row[0] if user_row else 0
         if user_paisa >= cost_paisa:
             new_balance = user_paisa - cost_paisa
             db_cursor.execute("UPDATE users SET wallet_balance_paisa = ? WHERE username = ?", (new_balance, current_user))
@@ -120,13 +120,50 @@ def play_elevenlabs_voice(text_to_speak, headers):
 
 init_production_db()
 
-# --- 2. లేఅవుట్ కాన్ఫిగరేషన్ ---
+# --- 2. ప్రొఫెషనల్ సూపర్-స్లిమ్ మొబైల్ UI & CSS ---
 st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
 
-FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
+st.markdown("""
+    <style>
+    /* హెడర్ మెనూ మరియు అనవసర ఐకాన్లను పూర్తిగా దాచడానికి */
+    [data-testid="stHeader"] { opacity: 0 !important; pointer-events: none !important; height: 0px !important; }
+    .stAppDeployButton { display: none !important; }
+    #MainMenu { visibility: hidden !important; }
+    footer { visibility: hidden !important; }
+    
+    /* 📱 మొబైల్ టచ్ స్క్రోలింగ్ ఎనేబుల్ చేయడం (సూపర్ స్మూత్ గా పైకి, కిందకు వెళ్ళడానికి) */
+    html, body, [data-testid="stAppViewContainer"] {
+        overflow-y: auto !important;
+        scroll-behavior: smooth;
+    }
+    
+    /* టాప్ గ్యాప్ తగ్గించి స్క్రీన్‌ను పైకి జరపడానికి */
+    .block-container { 
+        padding-top: 0.1rem !important; 
+        padding-bottom: 2rem !important;
+        padding-left: 0.5rem !important; 
+        padding-right: 0.5rem !important; 
+        max-width: 100% !important;
+    }
+    
+    /* ✍️ ప్రాంప్ట్ బాక్స్ (Text Area) సైజును బాగా పెంచడానికి స్టైలింగ్ */
+    div[data-testid="stTextArea"] textarea { 
+        min-height: 220px !important; 
+        font-size: 16px !important; 
+    }
+    
+    /* టాప్ మినీ-మెనూ బాక్స్ స్టైలింగ్ (కచ్చితంగా 1 ఇంచ్ లో సరిపోయేలా) */
+    .top-bar-box { 
+        background-color: #f7f9fa; 
+        padding: 6px 10px; 
+        border-radius: 8px; 
+        border: 1px solid #eef2f4; 
+        margin-bottom: 12px; 
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-st.title("🎬 Real Movie Tech AI Studio")
-st.write("1080p Ultra HD Cinematic Video Generator")
+FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
 
 current_user = "test_user"
 
@@ -135,14 +172,18 @@ user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username =
 user_paisa = user_row[0] if user_row else 0
 conn.close()
 
-# వాలెట్ డ్యాష్‌బోర్డ్
-col_w1, col_w2 = st.columns([2, 1])
-with col_w1:
-    st.write(f"👤 **యూజర్:** {current_user} | 💳 **బ్యాలెన్స్:** ₹{user_paisa/100:.2f}")
-with col_w2:
-    # 🎯 🌟 ఇక్కడ ఆప్షన్స్ లిస్ట్ పర్ఫెక్ట్‌గా ఇచ్చాను బాస్ [50, 100, 500] 🌟
-    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500])
-    if st.button("➕ Topup Wallet"):
+# 🎯 🌟 టైటిల్స్ అన్నీ తీసేసి.. కచ్చితంగా టాప్ 1 ఇంచ్ లో వచ్చేలా సబ్-కాలమ్స్ డ్యాష్‌బోర్డ్ 🌟
+st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
+m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
+
+with m_col1:
+    st.markdown(f"<span style='font-size:11px; color:#555;'>👤 {current_user}</span><br><span style='font-size:14px; font-weight:bold; color:#2E7D32;'>₹{user_paisa/100:.2f}</span>", unsafe_allow_html=True)
+    
+with m_col2:
+    recharge_amount = st.selectbox("Topup:", [50, 100, 500], label_visibility="collapsed")
+    
+with m_col3:
+    if st.button("➕ Topup", use_container_width=True):
         recharge_paisa = recharge_amount * 100
         db_conn = sqlite3.connect('ai_movie_studio.db')
         db_cursor = db_conn.cursor()
@@ -154,20 +195,19 @@ with col_w2:
             db_cursor.execute("INSERT INTO payment_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
                               (topup_order_id, current_user, recharge_paisa, "INR", "LOCAL", f"T_{int(time.time())}", f"P_{int(time.time())}", "PAID", now_str, now_str))
             db_conn.commit()
-            st.success(f"Added ₹{recharge_amount}")
+            st.success(f"+₹{recharge_amount}")
             time.sleep(1)
             st.rerun()
         except Exception:
             db_conn.rollback()
-            st.error("Topup Failed")
+            st.error("Error")
         finally:
             db_conn.close()
+st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown("---")
+# --- 3. ఐదు ప్రధాన కోర్ విజెట్స్ ---
 
-# --- 3. ఐదు ప్రధాన కోర్ విజెట్స్ (వరుస క్రమంలో) ---
-
-# టూల్ 1: ప్రాంప్ట్ బాక్స్
+# టూల్ 1: ప్రాంప్ట్ బాక్స్ (ఇప్పుడు మరింత ఎక్కువ ప్లేస్ తో పెద్దగా కనిపిస్తుంది)
 user_prompt = st.text_area("✍️ వీడియో ఐడియా లేదా కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: ఒక సింహం అడవిలో గర్జిస్తున్నట్టు వీడియో ఇవ్వు...")
 
 # టూల్ 2: ఫోటో అప్‌లోడర్
@@ -179,35 +219,3 @@ if video_duration < 60:
     duration_text = f"{video_duration} సెకన్లు"
 else:
     duration_text = f"{video_duration // 60} నిమిషాల {video_duration % 60} సెకన్లు"
-st.write(f"ఎంచుకున్న సమయం: **{duration_text}**")
-
-# టూల్ 4: సైజ్ సెలెక్టర్ ఫార్మాట్
-video_type = st.selectbox(
-    "📐 వీడియో టైప్ లేదా సైజ్ ఎంచుకోండి:",
-    ["📱 Instagram Reel / Shorts (9:16)", "📺 YouTube Full Video (16:9)", "🟩 Square Post / Video (1:1)"]
-)
-selected_ratio = "9:16" if "9:16" in video_type else ("1:1" if "1:1" in video_type else "16:9")
-
-VIDEO_COST_PAISA = int((video_duration / 10) * 2000)
-st.write(f"💰 **ఈ వీడియో ఖర్చు:** ₹{VIDEO_COST_PAISA/100:.2f} ({VIDEO_COST_PAISA} పైసలు)")
-
-video_placeholder = st.container()
-
-# టూల్ 5: సబ్మిట్ బటన్ (Generate Button)
-if st.button(f"🚀 Generate {duration_text} Ultra HD Video", use_container_width=True):
-    if user_prompt:
-        if user_paisa >= VIDEO_COST_PAISA:
-            st.info("🔄 AI ఇంజన్లు రన్ అవుతున్నాయి, దయచేసి వేచి ఉండండి...")
-            headers = {"Authorization": f"Key {FAL_API_KEY}", "Content-Type": "application/json"}
-            
-            talk_1 = "అద్భుతం బాస్! మీ సినిమా స్టోరీ చాలా బాగుంది. దీనికి తగ్గట్టు పక్కా మూవీ టెక్ విజువల్స్ డిజైన్ చేస్తున్నాను."
-            play_elevenlabs_voice(talk_1, headers)
-            
-            final_photo_url = ""
-            if uploaded_photo is None:
-                final_photo_url = generate_flux_dev_photo(user_prompt, headers)
-                if final_photo_url:
-                    st.image(final_photo_url, caption="📸 AI ఆటో-ఫోటో", width=250)
-            else:
-                final_photo_url = "https://unsplash.com"
-
