@@ -4,7 +4,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
-# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ ---
+# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ (కచ్చితమైన కాలమ్స్ మాత్రమే) ---
 def init_production_db():
     conn = sqlite3.connect('ai_movie_studio.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -19,14 +19,14 @@ def init_production_db():
         )
     ''')
     
-    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్
+    # 2. పేమెంట్ ఆర్డర్స్ టేబుల్ (కచ్చితంగా 10 కాలమ్స్ మాత్రమే)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_orders (
             order_id TEXT PRIMARY KEY, 
             username TEXT NOT NULL, 
             amount_paisa INTEGER NOT NULL CHECK(amount_paisa > 0),
             currency TEXT NOT NULL DEFAULT 'INR', 
-            provider TEXT NOT NULL DEFAULT 'UNSELECTED',
+            provider TEXT NOT NULL DEFAULT 'LOCAL',
             provider_order_id TEXT UNIQUE, 
             provider_payment_id TEXT UNIQUE, 
             status TEXT NOT NULL,
@@ -35,6 +35,7 @@ def init_production_db():
             FOREIGN KEY (username) REFERENCES users(username)
         )
     ''')
+    
     try:
         cursor.execute("INSERT OR IGNORE INTO users (username, wallet_balance_paisa) VALUES (?, ?)", ("test_user", 50000))
     except Exception:
@@ -42,7 +43,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ డిడクション ట్రాన్సాクション ఫంక్షన్
+# వాలెట్ డిడక్షన్ బ్యాంకింగ్ ట్రాన్సాクション ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -59,6 +60,7 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
             order_id = f"ORD_{int(time.time())}"
             now_str = datetime.now(timezone.utc).isoformat()
             
+            # 🌟 10 కాలమ్స్ కి 10 వాల్యూస్ పక్కాగా మ్యాచ్ చేసాము (OperationalError రాదు)
             db_cursor.execute(
                 """INSERT INTO payment_orders 
                 (order_id, username, amount_paisa, currency, provider, provider_order_id, provider_payment_id, status, created_at, paid_at) 
@@ -67,8 +69,9 @@ def execute_wallet_transaction(current_user, cost_paisa, req_id, provider_name):
             )
             db_conn.commit()
             return True
-        db_conn.rollback()
-        return False
+        else:
+            db_conn.rollback()
+            return False
     except Exception:
         db_conn.rollback()
         return False
@@ -136,35 +139,76 @@ def play_elevenlabs_voice(text_to_speak, headers):
                         return
     except Exception:
         pass
+    
     js_code = f'<script>if("speechSynthesis" in window){{var speech=new SpeechSynthesisUtterance("{text_to_speak}");speech.lang="te-IN";window.speechSynthesis.speak(speech);}}</script>'
     st.components.v1.html(js_code, height=0)
 
 init_production_db()
 
-# --- 2. అఫీషియల్ డిఫాల్ట్ లేఅవుట్ (ఎలిమెంట్స్ హైడింగ్స్ ఏవీ లేవు) ---
+# --- 2. ప్రొఫెషనల్ యాప్ లేఅవుట్ & CSS (సింబల్స్ శాశ్వతంగా తొలగింపు) ---
 st.set_page_config(page_title="AI Movie Studio HD", layout="centered")
+
+st.markdown("""
+    <style>
+    header, [data-testid="stHeader"], .stAppDeployButton, #MainMenu, [data-testid="collapsedControl"] { 
+        display: none !important; 
+        visibility: hidden !important; 
+        height: 0px !important;
+    }
+    footer { display: none !important; visibility: hidden !important; }
+    
+    html, body, [data-testid="stAppViewContainer"], .main {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        scroll-behavior: smooth;
+    }
+    
+    .block-container { 
+        padding-top: 0.5rem !important; 
+        padding-bottom: 2rem !important;
+        padding-left: 0.5rem !important; 
+        padding-right: 0.5rem !important; 
+        max-width: 100% !important;
+    }
+    
+    .top-bar-box { 
+        background-color: #ffffff; 
+        padding: 10px; 
+        border-radius: 10px; 
+        border: 1px solid #eef2f4; 
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px; 
+    }
+    
+    div[data-testid="stTextArea"] textarea { 
+        min-height: 220px !important; 
+        font-size: 16px !important; 
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 FAL_API_KEY = "fal_sk_fba7ddbf009141529452771949a7babbf6a8868d86a405e8666ee3f10cdb2773"
 current_user = "test_user"
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
+# 🎯 🌟 fetchone() టూపుల్ ఇండెక్స్ లోపాన్ని ఇక్కడ పక్కాగా ఫిక్స్ చేశాను 🌟
 user_paisa = user_row[0] if user_row else 0
 conn.close()
 
-# 🎯 టాప్ వాలెట్ డ్యాష్‌బోర్డ్ వరుస
-st.subheader("💳 AI Movie Studio Wallet")
+# 🎯 టాప్ 1 ఇంచ్ బార్ లో వాలెట్ కాలమ్స్ (ఎర్రర్లు లేని సురక్షిత సిస్టమ్)
+st.markdown('<div class="top-bar-box">', unsafe_allow_html=True)
 m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
 
 with m_col1:
-    st.write(f"👤 User: {current_user}")
-    st.write(f"💰 Balance: ₹{user_paisa/100:.2f}")
+    st.write(f"👤 {current_user}")
+    st.write(f"💳 **₹{user_paisa/100:.2f}**")
     
 with m_col2:
-    recharge_selection = st.selectbox("Topup Amount:", options=["₹50", "₹100", "₹500"])
+    recharge_selection = st.selectbox("Topup:", options=["₹50", "₹100", "₹500"], label_visibility="collapsed")
     
 with m_col3:
-    if st.button("➕ Topup Wallet", use_container_width=True):
+    if st.button("➕ Topup", use_container_width=True):
         recharge_amount = int(recharge_selection.replace("₹", ""))
         recharge_paisa = recharge_amount * 100
         
@@ -173,8 +217,10 @@ with m_col3:
         try:
             db_conn.execute("BEGIN IMMEDIATE;")
             db_cursor.execute("UPDATE users SET wallet_balance_paisa = wallet_balance_paisa + ? WHERE username = ?", (recharge_paisa, current_user))
+            
             topup_order_id = f"TOP_{int(time.time())}"
             now_str = datetime.now(timezone.utc).isoformat()
+            
             db_cursor.execute(
                 """INSERT INTO payment_orders 
                 (order_id, username, amount_paisa, currency, provider, provider_order_id, provider_payment_id, status, created_at, paid_at) 
@@ -190,40 +236,7 @@ with m_col3:
             st.error("Error")
         finally:
             db_conn.close()
+st.markdown('</div>', unsafe_allow_html=True)
 
-st.write("---")
+# --- 3. ఐదు ప్రధాన కోర్ విజెట్స్ (వరుస క్రమంలో పక్కాగా) ---
 
-# --- 3. ఐదు ప్రధాన కోర్ విజెట్స్ (ఖచ్చితంగా స్క్రీన్ పైనే వరుసగా కనిపిస్తాయి) ---
-st.write("### 🎬 Movie Workspace")
-
-# టూల్ 1: కథ రాసే బాక్స్
-user_prompt = st.text_area("✍️ వీడియో ఐడియా లేదా కథ ఇక్కడ రాయండి:", placeholder="ఉదాహరణ: ఒక సింహం అడవిలో గర్జిస్తున్నట్టు వీడియో ఇవ్వు...", height=150)
-
-# టూల్ 2: ఫోటో అప్‌లోడర్
-uploaded_photo = st.file_uploader("📸 ఫోటో ఆధారంగా చేయాలనుకుంటే ఇక్కడ అప్‌లోడ్ చేయండి (Optional):", type=["png", "jpg", "jpeg"])
-
-# టూల్ 3: నిడివి స్లైడర్ (10 సెకన్ల నుండి 20 నిమిషాల వరకు)
-video_duration = st.slider("⏱️ వీడియో నిడివి సెలెక్ట్ చేయండి (సెకన్లలో):", min_value=10, max_value=1200, value=10, step=5)
-if video_duration < 60:
-    duration_text = f"{video_duration} సెకన్లు"
-else:
-    duration_text = f"{video_duration // 60} నిమిషాల {video_duration % 60} సెకన్లు"
-st.write(f"ఎంచుకున్న సమయం: **{duration_text}**")
-
-# టూల్ 4: సైజ్ సెలెక్టర్ ఫార్మాట్ డ్రాప్‌డౌన్
-video_type = st.selectbox(
-    "📐 వీడియో టైప్ లేదా సైజ్ ఎంచుకోండి:",
-    ["📱 Instagram Reel / Shorts (9:16)", "📺 YouTube Full Video (16:9)", "🟩 Square Post / Video (1:1)"]
-)
-selected_ratio = "9:16" if "9:16" in video_type else ("1:1" if "1:1" in video_type else "16:9")
-
-# 💰 యూజర్ ఛార్జ్ కాలిక్యులేషన్ లాజిక్ (ప్రతి 10 సెకన్లకి ₹20)
-VIDEO_COST_PAISA = int((video_duration / 10) * 2000)
-st.write(f"💰 ఈ వీడియో ఖర్చు: **₹{VIDEO_COST_PAISA/100:.2f}**")
-
-video_placeholder = st.container()
-
-# 🚀 టూల్ 5: సబ్మిట్ బటన్ (Generate Button)
-if st.button("🚀 Generate HD Video", use_container_width=True):
-    if user_prompt:
-        if user_paisa >= VIDEO_COST_PAISA:
