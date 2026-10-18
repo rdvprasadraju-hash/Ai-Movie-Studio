@@ -85,7 +85,7 @@ current_user = "test_user"
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-user_paisa = user_row if user_row else 0
+user_paisa = user_row[0] if user_row else 0
 conn.close()
 
 # మినీ మెనూ విత్ సబ్-కాలమ్స్
@@ -96,7 +96,8 @@ with m_col1:
     st.markdown(f"<span style='font-size:12px; color:#555;'>👤 {current_user}</span><br>💳 **₹{user_paisa/100:.2f}**", unsafe_allow_html=True)
     
 with m_col2:
-    recharge_amount = st.selectbox("Topup Amt:",, label_visibility="collapsed")
+    # 🎯 ఇక్కడ రీఛార్జ్ ఆప్షన్స్ లిస్ట్ పర్ఫెక్ట్‌గా ఇచ్చాను బాస్!
+    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 200, 500], label_visibility="collapsed")
     
 with m_col3:
     if st.button("➕ Topup", use_container_width=True):
@@ -128,7 +129,6 @@ uploaded_photo = st.file_uploader("📸 ఫోటో ఆధారంగా (Opti
 
 video_duration = st.slider("⏱️ వీడియో నిడివి (సెకన్లు):", min_value=10, max_value=60, value=10, step=5)
 
-# 🎯 🌟 కొత్తగా చేర్చిన వీడియో సైజ్ (Aspect Ratio) సెలెక్టర్ 🌟
 st.write("📐 **వీడియో టైప్ / సైజ్ ఎంచుకోండి:**")
 video_type = st.selectbox(
     "వీడియో ఫార్మాట్ సెలెక్ట్ చేయండి:",
@@ -136,7 +136,6 @@ video_type = st.selectbox(
     label_visibility="collapsed"
 )
 
-# డైనమిక్‌గా సైజు మ్యాపింగ్ చేయడం
 if "9:16" in video_type:
     selected_ratio = "9:16"
 elif "1:1" in video_type:
@@ -144,11 +143,9 @@ elif "1:1" in video_type:
 else:
     selected_ratio = "16:9"
 
-# డైనమిక్ కాస్ట్
 VIDEO_COST_PAISA = int((video_duration / 10) * 1000)
 st.caption(f"💰 ఈ వీడియో ఖర్చు: ₹{VIDEO_COST_PAISA/100:.2f} ({VIDEO_COST_PAISA} పైసలు)")
 
-# వీడియో కంటైనర్ ప్లేస్మెంట్
 video_placeholder = st.container()
 
 if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_width=True):
@@ -168,11 +165,10 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                 except:
                     pass
 
-            # పేలోడ్‌లో డైనమిక్ aspect_ratio మరియు duration పంపడం జరుగుతుంది
             video_payload = {
                 "prompt": f"Cinematic real movie shot: {user_prompt}", 
                 "image_url": final_photo_url if final_photo_url else "https://unsplash.com", 
-                "aspect_ratio": selected_ratio, # 🎯 ఇక్కడ కరెక్ట్ సైజ్ సెట్ అవుతుంది బాస్
+                "aspect_ratio": selected_ratio,
                 "duration": video_duration
             }
             
@@ -207,10 +203,12 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                         finally:
                             db_conn.close()
                         
-                        free_live_chatgpt_speaker(f"ఇక మీ {video_duration} సెకన్ల సినిమా ప్యూర్ టెన్ ఎయిటీ పీ హెచ్ డీ క్వాలిటీ లో రెడీ అయిపోయింది బాస్!")
+                        free_live_chatgpt_speaker(f"ఇక మీ {video_duration} సెకన్ల సినిమా ప్యూర్ 1080p HD క్వాలిటీ లో రెడీ అయిపోయింది బాస్!")
                         
                         with video_placeholder:
                             st.success("🎉 వీడియో విజయవంతంగా రెడీ అయ్యింది!")
                             st.video(raw_video_url)
                             st.download_button(label="📥 Download Video", data=requests.get(raw_video_url).content, file_name="movie.mp4", mime="video/mp4", use_container_width=True)
                     else:
+                        st.error("AI సర్వర్ రెస్పాన్స్ ఇవ్వలేదు.")
+                else:
