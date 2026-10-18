@@ -4,7 +4,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
-# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ ---
+# --- 1. ప్రొడక్షన్ డేటాబేస్ ఇంజిన్ సెటప్ ---
 def init_production_db():
     conn = sqlite3.connect('ai_movie_studio.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -32,7 +32,7 @@ def init_production_db():
     conn.commit()
     conn.close()
 
-# వాలెట్ మరియు ఆర్డర్ అప్‌డేట్ చేయడానికి ప్రత్యేక ఫంక్షన్
+# വാലെറ്റ് మరియు ఆర్డర్ అప్‌డేట్ చేయడానికి ప్రత్యేక ఫంక్షన్
 def execute_wallet_transaction(current_user, cost_paisa, req_id):
     db_conn = sqlite3.connect('ai_movie_studio.db')
     db_cursor = db_conn.cursor()
@@ -141,7 +141,7 @@ user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username =
 user_paisa = user_row[0] if user_row else 0
 conn.close()
 
-# 🎯 మినీ మెనూ విత్ సబ్-కాలమ్స్ (సింటాక్స్ పూర్తిగా సరిచేయబడింది)
+# మినీ మెనూ విత్ సబ్-కాలమ్స్
 st.markdown('<div class="mini-menu-box">', unsafe_allow_html=True)
 m_col1, m_col2, m_col3 = st.columns([1.1, 1.4, 1.1])
 
@@ -149,7 +149,6 @@ with m_col1:
     st.markdown(f"<span style='font-size:12px; color:#555;'>👤 {current_user}</span><br>💳 **₹{user_paisa/100:.2f}**", unsafe_allow_html=True)
     
 with m_col2:
-    # లిస్ట్‌ను పక్కాగా ఇచ్చాను, ఎక్కడా ఎక్స్‌ట్రా కామా లేదు
     recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500], label_visibility="collapsed")
     
 with m_col3:
@@ -222,3 +221,4 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
             raw_video_url, req_id = call_fal_ai_video_api(video_payload, headers, FAL_API_KEY)
             
             if raw_video_url:
+                tx_status = execute_wallet_transaction(current_user, VIDEO_COST_PAISA, req_id)
