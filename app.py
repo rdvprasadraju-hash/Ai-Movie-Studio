@@ -204,8 +204,7 @@ m_col1, m_col2, m_col3 = st.columns([1.2, 1.4, 1.1])
 
 with m_col1:
     st.write(f"User: {current_user}")
-    wallet_value_in_inr = float(user_paisa / 100.0)
-    st.metric(label="Wallet Balance", value=f"INR {wallet_value_in_inr:.2f}")
+    st.write(f"Balance: ₹{user_paisa/100:.2f}")
     
 with m_col2:
     recharge_selection = st.selectbox("Topup:", options=["₹50", "₹100", "₹500"], label_visibility="collapsed")
@@ -238,3 +237,6 @@ with m_col3:
             db_conn.rollback()
             st.error("Error")
         finally:
+            db_conn.close()
+st.markdown('</div>', unsafe_allow_html=True)
+
