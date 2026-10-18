@@ -4,7 +4,7 @@ import sqlite3
 import time
 from datetime import datetime, timezone
 
-# --- 1. ప్రొడక్షన్ డేటాబేస్ ఇంజిన్ సెటప్ ---
+# --- 1. ప్రొడクション డేటాబేస్ ఇంజిన్ సెటప్ ---
 def init_production_db():
     conn = sqlite3.connect('ai_movie_studio.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -31,6 +31,35 @@ def init_production_db():
         pass
     conn.commit()
     conn.close()
+
+# 🎯 ఇండెంట్టేషన్ ఎర్రర్ రాకుండా డేటాబేస్ అప్‌డేట్ కోసం ప్రత్యేక ఫంక్షన్
+def update_wallet_and_order(current_user, cost_paisa, req_id):
+    db_conn = sqlite3.connect('ai_movie_studio.db')
+    db_cursor = db_conn.cursor()
+    try:
+        db_cursor.execute("BEGIN IMMEDIATE;")
+        
+        # బ్యాలెన్స్ రీడింగ్
+        user_row = db_cursor.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
+        user_paisa = user_row[0] if user_row else 0
+        new_balance = user_paisa - cost_paisa
+        
+        # బ్యాలెన్స్ అప్‌డేట్
+        db_cursor.execute("UPDATE users SET wallet_balance_paisa = ? WHERE username = ?", (new_balance, current_user))
+        
+        # ఆర్డర్ ఇన్సర్ట్
+        order_id = f"ORD_{int(time.time())}"
+        now_str = datetime.now(timezone.utc).isoformat()
+        db_cursor.execute("INSERT INTO payment_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
+                          (order_id, current_user, cost_paisa, "INR", "FAL_AI", f"F_{req_id[:6]}", f"P_{int(time.time())}", "PAID", now_str, now_str))
+        
+        db_conn.commit()
+        return True
+    except Exception:
+        db_conn.rollback()
+        return False
+    finally:
+        db_conn.close()
 
 init_production_db()
 
@@ -85,7 +114,7 @@ current_user = "test_user"
 
 conn = sqlite3.connect('ai_movie_studio.db')
 user_row = conn.execute("SELECT wallet_balance_paisa FROM users WHERE username = ?", (current_user,)).fetchone()
-user_paisa = user_row if user_row else 0
+user_paisa = user_row[0] if user_row else 0
 conn.close()
 
 # మినీ మెనూ విత్ సబ్-కాలమ్స్
@@ -96,7 +125,7 @@ with m_col1:
     st.markdown(f"<span style='font-size:12px; color:#555;'>👤 {current_user}</span><br>💳 **₹{user_paisa/100:.2f}**", unsafe_allow_html=True)
     
 with m_col2:
-    recharge_amount = st.selectbox("Topup Amt:", [50, 100, 500], label_visibility="collapsed")
+    recharge_amount = st.selectbox("Topup Amt:",, label_visibility="collapsed")
     
 with m_col3:
     if st.button("➕ Topup", use_container_width=True):
@@ -190,25 +219,6 @@ if st.button(f"🚀 Generate {video_duration}s Ultra HD Video", use_container_wi
                                 break
                     
                     if raw_video_url:
-                        # 🎯 డేటాబేస్ అప్‌డేట్ లాజిక్ ఇక్కడ క్లీన్‌గా క్లోజ్ అయింది బాస్
-                        db_conn = sqlite3.connect('ai_movie_studio.db')
-                        db_cursor = db_conn.cursor()
-                        try:
-                            db_cursor.execute("BEGIN IMMEDIATE;")
-                            new_balance = user_paisa - VIDEO_COST_PAISA
-                            db_cursor.execute("UPDATE users SET wallet_balance_paisa = ? WHERE username = ?", (new_balance, current_user))
-                            order_id = f"ORD_{int(time.time())}"
-                            now_str = datetime.now(timezone.utc).isoformat()
-                            db_cursor.execute("INSERT INTO payment_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                                              (order_id, current_user, VIDEO_COST_PAISA, "INR", "FAL_AI", f"F_{req_id[:6]}", f"P_{int(time.time())}", "PAID", now_str, now_str))
-                            db_conn.commit()
-                        except Exception:
-                            db_conn.rollback()
-                        finally:
-                            db_conn.close()
+                        # 🎯 కొత్త ప్రత్యేక ఫంక్షన్‌ని ఉపయోగించి సురక్షితంగా బ్యాలెన్స్ అప్‌డేట్ చేయడం
+                        update_success = update_wallet_and_order(current_user, VIDEO_COST_PAISA, req_id)
                         
-                        free_live_chatgpt_speaker(f"ఇక మీ {video_duration} సెకన్ల సినిమా ప్యూర్ 1080p HD క్వాలిటీ లో రెడీ అయిపోయింది బాస్!")
-                        
-                        # 🎯 డేటాబేస్ try-except పూర్తిగా ముగిసిన తర్వాతే ఈ వీడియో ప్లేయర్ సెక్షన్ వస్తుంది
-                        with video_placeholder:
-                            st.success("🎉 వీడియో విజయవంతంగా రెడీ అయ్యింది!")
